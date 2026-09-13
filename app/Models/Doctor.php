@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Doctor extends Model
 {
-    protected $table = 'Doctors';
+    use HasFactory;
+
+    protected $table = 'doctors'; // Aligned with database schema
     protected $primaryKey = 'DoctorID';
     public $incrementing = true;
     protected $keyType = 'int';
@@ -18,6 +21,7 @@ class Doctor extends Model
         'Specialization',
         'ContactNumber',
         'Email',
+        'CreatedAt',
     ];
 
     public function consultations()

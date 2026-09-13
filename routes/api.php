@@ -16,3 +16,13 @@ Route::get('/diseases', [Diseasecontroller ::class, 'index']);
 
 // Disease + date ng ISANG specific patient lang
 Route::get('/patients/{patientId}/diseases', [Diseasecontroller ::class, 'byPatient']);
+
+
+Route::get('/debug-php', function () {
+    return response()->json([
+        'version' => phpversion(),
+        'ini_file' => php_ini_loaded_file(),
+        'sqlsrv_loaded' => extension_loaded('sqlsrv'),
+        'pdo_sqlsrv_loaded' => extension_loaded('pdo_sqlsrv'),
+    ]);
+});

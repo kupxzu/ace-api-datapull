@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Disease extends Model
 {
-    protected $table = 'Diseases';
+    use HasFactory;
+
+    protected $table = 'diseases';
     protected $primaryKey = 'DiseaseID';
     public $incrementing = true;
     protected $keyType = 'int';
@@ -22,7 +25,6 @@ class Disease extends Model
         'Date' => 'date:Y-m-d',
     ];
 
-    // A disease record belongs to one consultation
     public function consultation()
     {
         return $this->belongsTo(Consultation::class, 'ConsultationID');

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Patient extends Model
 {
-    protected $table = 'Patients';
+    use HasFactory;
+
+    protected $table = 'patients';
     protected $primaryKey = 'PatientID';
     public $incrementing = true;
     protected $keyType = 'int';
@@ -19,6 +22,7 @@ class Patient extends Model
         'BirthDate',
         'ContactNumber',
         'Address',
+        'CreatedAt',
     ];
 
     public function consultations()
@@ -26,16 +30,15 @@ class Patient extends Model
         return $this->hasMany(Consultation::class, 'PatientID');
     }
 
-    // Convenience: get all diseases for this patient through consultations
     public function diseases()
     {
         return $this->hasManyThrough(
             Disease::class,
             Consultation::class,
-            'PatientID',       // FK on consultations table
-            'ConsultationID',  // FK on diseases table
-            'PatientID',       // local key on patients table
-            'ConsultationID'   // local key on consultations table
+            'PatientID',
+            'ConsultationID',
+            'PatientID',
+            'ConsultationID'
         );
     }
 }

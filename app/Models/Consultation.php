@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Consultation extends Model
 {
-    protected $table = 'Consultations';
+    use HasFactory;
+
+    protected $table = 'consultations';
     protected $primaryKey = 'ConsultationID';
     public $incrementing = true;
     protected $keyType = 'int';
