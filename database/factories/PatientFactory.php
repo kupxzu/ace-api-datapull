@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\Patient;
@@ -11,13 +12,44 @@ class PatientFactory extends Factory
     public function definition(): array
     {
         return [
-            'FirstName'     => fake()->firstName(),
-            'LastName'      => fake()->lastName(),
-            'Gender'        => fake()->randomElement(['Male', 'Female']),
-            'BirthDate'     => fake()->dateTimeBetween('-70 years', '-1 years')->format('Y-m-d'),
-            'ContactNumber' => fake()->phoneNumber(),
-            'Address'       => fake()->address(),
-            'CreatedAt'     => fake()->dateTimeBetween('-1 year', 'now'),
+            'FirstName' => fake()->firstName(),
+
+            'LastName' => fake()->lastName(),
+
+            'Gender' => fake()->randomElement([
+                'Male',
+                'Female',
+            ]),
+
+            'BirthDate' => fake()->dateTimeBetween(
+                '-80 years',
+                '-1 year'
+            )->format('Y-m-d'),
+
+            'ContactNumber' => fake()->numerify('09#########'),
+
+            'Address' => fake()->randomElement([
+                'Tuguegarao City, Cagayan',
+                'Iguig, Cagayan',
+                'Peñablanca, Cagayan',
+                'Solana, Cagayan',
+                'Aparri, Cagayan',
+                'Lal-lo, Cagayan',
+                'Gonzaga, Cagayan',
+                'Amulung, Cagayan',
+                'Alcala, Cagayan',
+                'Baggao, Cagayan',
+                'Gattaran, Cagayan',
+                'Lasam, Cagayan',
+                'Sanchez-Mira, Cagayan',
+                'Camalaniugan, Cagayan',
+                'Abulug, Cagayan',
+            ]),
+
+            'CreatedAt' => fake()->dateTimeBetween(
+                '-2 years',
+                'now'
+            ),
         ];
     }
 }
