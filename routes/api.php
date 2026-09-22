@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Diseasecontroller;
+use App\Http\Controllers\Api\DiseaseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,12 +11,8 @@ use App\Http\Controllers\Api\Diseasecontroller;
 | (o i-merge kung may existing ka nang laman ang file na ito).
 */
 
-// Lahat ng disease + date records (kasama patient name)
-Route::get('/diseases', [Diseasecontroller ::class, 'index']);
-
-// Disease + date ng ISANG specific patient lang
-Route::get('/patients/{patientId}/diseases', [Diseasecontroller ::class, 'byPatient']);
-
+// Disease records (FinalDiagnosis + date) pulled from psPatRegisters (MSSQL, sqlsrv connection)
+Route::get('/diseases', [DiseaseController::class, 'index']);
 
 Route::get('/debug-php', function () {
     return response()->json([
