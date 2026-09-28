@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\Doctor;
@@ -11,9 +12,22 @@ class DoctorFactory extends Factory
     public function definition(): array
     {
         return [
-            'FirstName'     => fake()->firstName(),
-            'LastName'      => fake()->lastName(),
-            'Specialization' => fake()->randomElement(['Cardiology', 'Neurology', 'Pediatrics', 'General Practice', 'Orthopedics', 'Dermatology']),
+            'FirstName'      => fake()->firstName(),
+            'LastName'       => fake()->lastName(),
+            'Specialization' => fake()->randomElement([
+                // Specialized & Hospital-focused
+                'Internal Medicine', 
+                'Pulmonology', 
+                'Infectious Disease Specialist', 
+                'Emergency Medicine', 
+                'Pediatrics', 
+                'Cardiology', 
+                'Neurology', 
+                'Orthopedics', 
+                'Obstetrics and Gynecology (OB-GYN)',
+                // General
+                'General Practice'
+            ]),
             'ContactNumber'  => fake()->phoneNumber(),
             'Email'          => fake()->safeEmail(),
             'CreatedAt'      => fake()->dateTimeBetween('-1 year', 'now'),
