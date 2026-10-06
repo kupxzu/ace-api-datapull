@@ -12,26 +12,60 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create base entities
-        $doctors = Doctor::factory()->count(30)->create();
-        $patients = Patient::factory()->count(2000)->create();
+        /*
+        |--------------------------------------------------------------------------
+        | Doctors
+        |--------------------------------------------------------------------------
+        */
 
-        // 2. Create 300 Consultations linked to random Doctors and Patients
+        $doctors = Doctor::factory()
+            ->count(5000)
+            ->create();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Patients
+        |--------------------------------------------------------------------------
+        */
+
+        $patients = Patient::factory()
+            ->count(1400)
+            ->create();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Consultations
+        |--------------------------------------------------------------------------
+        */
+
         $consultations = Consultation::factory()
-            ->count(2000)
+            ->count(5000)
             ->make()
             ->each(function ($consultation) use ($doctors, $patients) {
-                $consultation->DoctorID = $doctors->random()->DoctorID;
-                $consultation->PatientID = $patients->random()->PatientID;
+
+                $consultation->DoctorID =
+                    $doctors->random()->DoctorID;
+
+                $consultation->PatientID =
+                    $patients->random()->PatientID;
+
                 $consultation->save();
             });
 
-        // 3. Create 300 Disease records linked to existing Consultations
+        /*
+        |--------------------------------------------------------------------------
+        | Diseases
+        |--------------------------------------------------------------------------
+        */
+
         Disease::factory()
-            ->count(2000)
+            ->count(5000)
             ->make()
             ->each(function ($disease) use ($consultations) {
-                $disease->ConsultationID = $consultations->random()->ConsultationID;
+
+                $disease->ConsultationID =
+                    $consultations->random()->ConsultationID;
+
                 $disease->save();
             });
     }

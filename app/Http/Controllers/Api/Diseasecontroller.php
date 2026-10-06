@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Disease;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class DiseaseController extends Controller
@@ -14,51 +15,35 @@ class DiseaseController extends Controller
      */
     public function index(Request $request)
     {
-        $diseases = Disease::with(['consultation.patient'])->get();
+        // Kunin ang records mula sa MSSQL table kung saan may laman ang impression, finaldiagnosis, o dischdiagnosis
+        $rows = DB::connection('sqlsrv')
+            ->table('psPatRegisters')
+            ->select('registrydate', 'impression', 'finaldiagnosis', 'dischdiagnosis')
+            ->where(function ($query) {
+                $query->whereNotNull('impression')->where('impression', '<>', '')
+                    ->orWhereNotNull('finaldiagnosis')->where('finaldiagnosis', '<>', '')
+                    ->orWhereNotNull('dischdiagnosis')->where('dischdiagnosis', '<>', '');
+            })
+            ->orderBy('registrydate', 'desc')
+            ->get();
 
-        $data = $diseases->map(function ($disease) {
-            $patient = optional($disease->consultation)->patient;
+        $data = $rows->map(function ($row) {
+            // Pagsama-samahin o piliin kung saan nakita ang diagnosis
+            $diagnosisText = trim($row->finaldiagnosis ?: ($row->dischdiagnosis ?: $row->impression));
 
             return [
-                'patient_name' => $patient
-                    ? $patient->FirstName . ' ' . $patient->LastName
-                    : null,
-                'disease'      => $disease->NameDisease,
-                'date'         => $disease->Date->format('Y-m-d'),
+                'patient_name' => null, // O kunin kung meron man sa table
+                'disease'      => $diagnosisText,
+                'date'         => $row->registrydate ? date('Y-m-d', strtotime($row->registrydate)) : null,
             ];
+        })->filter(function ($item) {
+            return !empty($item['disease']) && !empty($item['date']);
         });
 
         return response()->json([
             'success' => true,
             'count'   => $data->count(),
-            'data'    => $data,
-        ]);
-    }
-
-    /**
-     * GET /api/patients/{patientId}/diseases
-     * Returns disease name + date for ONE specific patient.
-     */
-    public function byPatient($patientId)
-    {
-        $diseases = Disease::with('consultation')
-            ->whereHas('consultation', function ($q) use ($patientId) {
-                $q->where('PatientID', $patientId);
-            })
-            ->get();
-
-        $data = $diseases->map(function ($disease) {
-            return [
-                'disease' => $disease->NameDisease,
-                'date'    => $disease->Date->format('Y-m-d'),
-            ];
-        });
-
-        return response()->json([
-            'success'    => true,
-            'patient_id' => (int) $patientId,
-            'count'      => $data->count(),
-            'data'       => $data,
+            'data'    => $data->values(),
         ]);
     }
 }
