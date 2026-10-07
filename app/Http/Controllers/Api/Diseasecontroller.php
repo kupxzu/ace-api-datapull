@@ -3,47 +3,141 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Disease;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DiseaseController extends Controller
 {
     /**
      * GET /api/diseases
-     * Returns disease name + date for every patient.
+     *
+     * Returns raw diagnosis records from psPatRegisters.
+     *
+     * Important:
+     * - registrydate = date/time of the patient registry record
+     * - impression, finaldiagnosis, dischdiagnosis are returned separately
+     * - disease detection/cleaning will be handled by the Python worker
+     * - historical records are NOT filtered by year here because they are
+     *   needed for model training and historical surveillance
      */
     public function index(Request $request)
     {
-        // Kunin ang records mula sa MSSQL table kung saan may laman ang impression, finaldiagnosis, o dischdiagnosis
-        $rows = DB::connection('sqlsrv')
+        $query = DB::connection('sqlsrv')
             ->table('psPatRegisters')
-            ->select('registrydate', 'impression', 'finaldiagnosis', 'dischdiagnosis')
+            ->select([
+                'registrydate',
+                'impression',
+                'finaldiagnosis',
+                'dischdiagnosis',
+            ])
+            ->whereNotNull('registrydate')
             ->where(function ($query) {
-                $query->whereNotNull('impression')->where('impression', '<>', '')
-                    ->orWhereNotNull('finaldiagnosis')->where('finaldiagnosis', '<>', '')
-                    ->orWhereNotNull('dischdiagnosis')->where('dischdiagnosis', '<>', '');
-            })
-            ->orderBy('registrydate', 'desc')
+
+                // Impression has usable content
+                $query->where(function ($q) {
+                    $q->whereNotNull('impression')
+                        ->whereRaw("LTRIM(RTRIM(impression)) <> ''");
+                })
+
+                // OR Final Diagnosis has usable content
+                ->orWhere(function ($q) {
+                    $q->whereNotNull('finaldiagnosis')
+                        ->whereRaw("LTRIM(RTRIM(finaldiagnosis)) <> ''");
+                })
+
+                // OR Discharge Diagnosis has usable content
+                ->orWhere(function ($q) {
+                    $q->whereNotNull('dischdiagnosis')
+                        ->whereRaw("LTRIM(RTRIM(dischdiagnosis)) <> ''");
+                });
+            });
+
+        /*
+         * Optional year filter.
+         *
+         * Example:
+         * /api/diseases?year=2026
+         *
+         * IMPORTANT:
+         * Python forecasting should normally call /api/diseases
+         * WITHOUT the year parameter so historical records remain available.
+         */
+        if ($request->filled('year')) {
+            $year = (int) $request->input('year');
+
+            if ($year >= 2000 && $year <= now()->year) {
+                $query->whereYear('registrydate', $year);
+            }
+        }
+
+        $rows = $query
+            ->orderBy('registrydate', 'asc')
             ->get();
 
-        $data = $rows->map(function ($row) {
-            // Pagsama-samahin o piliin kung saan nakita ang diagnosis
-            $diagnosisText = trim($row->finaldiagnosis ?: ($row->dischdiagnosis ?: $row->impression));
+        $data = $rows
+            ->map(function ($row) {
 
-            return [
-                'patient_name' => null, // O kunin kung meron man sa table
-                'disease'      => $diagnosisText,
-                'date'         => $row->registrydate ? date('Y-m-d', strtotime($row->registrydate)) : null,
-            ];
-        })->filter(function ($item) {
-            return !empty($item['disease']) && !empty($item['date']);
-        });
+                $clean = function ($value) {
+                    if ($value === null) {
+                        return null;
+                    }
+
+                    $value = trim((string) $value);
+
+                    if (
+                        $value === '' ||
+                        in_array(strtolower($value), [
+                            'null',
+                            'none',
+                            'n/a',
+                            'na',
+                            '-'
+                        ], true)
+                    ) {
+                        return null;
+                    }
+
+                    return $value;
+                };
+
+                return [
+                    'registrydate' => $row->registrydate
+                        ? date(
+                            'Y-m-d H:i:s',
+                            strtotime($row->registrydate)
+                        )
+                        : null,
+
+                    'impression' => $clean($row->impression),
+
+                    'finaldiagnosis' => $clean(
+                        $row->finaldiagnosis
+                    ),
+
+                    'dischdiagnosis' => $clean(
+                        $row->dischdiagnosis
+                    ),
+                ];
+            })
+            ->filter(function ($item) {
+
+                // Valid registry date is required
+                if (empty($item['registrydate'])) {
+                    return false;
+                }
+
+                // At least one diagnosis-related field must exist
+                return
+                    $item['impression'] !== null ||
+                    $item['finaldiagnosis'] !== null ||
+                    $item['dischdiagnosis'] !== null;
+            })
+            ->values();
 
         return response()->json([
             'success' => true,
-            'count'   => $data->count(),
-            'data'    => $data->values(),
+            'count' => $data->count(),
+            'data' => $data,
         ]);
     }
 }
