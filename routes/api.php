@@ -11,14 +11,19 @@ use App\Http\Controllers\Api\DiseaseController;
 | (o i-merge kung may existing ka nang laman ang file na ito).
 */
 
-// Disease records (FinalDiagnosis + date) pulled from psPatRegisters (MSSQL, sqlsrv connection)
-Route::get('/diseases', [DiseaseController::class, 'index']);
+// All API endpoints require HTTP Basic Auth (username/password configured via
+// `php artisan api:credentials`, stored hashed in .env — never in the shared
+// SQL Server database).
+Route::middleware(['api.auth'])->group(function () {
+    // Disease records (FinalDiagnosis + date) pulled from psPatRegisters (MSSQL, sqlsrv connection)
+    Route::get('/diseases', [DiseaseController::class, 'index']);
 
-Route::get('/debug-php', function () {
-    return response()->json([
-        'version' => phpversion(),
-        'ini_file' => php_ini_loaded_file(),
-        'sqlsrv_loaded' => extension_loaded('sqlsrv'),
-        'pdo_sqlsrv_loaded' => extension_loaded('pdo_sqlsrv'),
-    ]);
+    Route::get('/debug-php', function () {
+        return response()->json([
+            'version' => phpversion(),
+            'ini_file' => php_ini_loaded_file(),
+            'sqlsrv_loaded' => extension_loaded('sqlsrv'),
+            'pdo_sqlsrv_loaded' => extension_loaded('pdo_sqlsrv'),
+        ]);
+    });
 });
