@@ -44,6 +44,11 @@ class DiseaseController extends Controller
                 'r.PK_psPatRegisters',
                 'r.registrydate',
 
+                // Encounter classification for surveillance context
+                'r.pattrantype',
+
+                'r.chiefcomplaint',
+                'r.clinicchiefcomplaints',
                 'r.impression',
                 'r.finaldiagnosis',
                 'r.dischdiagnosis',
@@ -100,6 +105,16 @@ class DiseaseController extends Controller
                 $query
 
                     ->where(function ($q) {
+                        $q->whereNotNull('r.chiefcomplaint')
+                            ->whereRaw("LTRIM(RTRIM(r.chiefcomplaint)) <> ''");
+                    })
+
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('r.clinicchiefcomplaints')
+                            ->whereRaw("LTRIM(RTRIM(r.clinicchiefcomplaints)) <> ''");
+                    })
+
+                    ->orWhere(function ($q) {
                         $q->whereNotNull('r.impression')
                             ->whereRaw(
                                 "LTRIM(RTRIM(r.impression)) <> ''"
@@ -209,6 +224,11 @@ class DiseaseController extends Controller
                         )
                         : null,
 
+                    // I/E/O codes for descriptive encounter classification.
+                    'transaction_type_code' => $cleanText(
+                        $row->pattrantype
+                    ),
+
                     'age' => $age,
 
                     'gender' => $cleanText(
@@ -226,6 +246,9 @@ class DiseaseController extends Controller
                     'province' => $cleanText(
                         $row->prprovince
                     ),
+
+                    'chiefcomplaint' => $cleanText($row->chiefcomplaint),
+                    'clinicchiefcomplaints' => $cleanText($row->clinicchiefcomplaints),
 
                     'impression' => $cleanText(
                         $row->impression
@@ -251,6 +274,8 @@ class DiseaseController extends Controller
                 }
 
                 return
+                    $item['chiefcomplaint'] !== null ||
+                    $item['clinicchiefcomplaints'] !== null ||
                     $item['impression'] !== null ||
                     $item['finaldiagnosis'] !== null ||
                     $item['dischdiagnosis'] !== null;
